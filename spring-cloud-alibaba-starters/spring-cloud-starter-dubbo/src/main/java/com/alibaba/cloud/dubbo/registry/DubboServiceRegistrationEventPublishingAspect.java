@@ -36,10 +36,11 @@ import org.springframework.context.ApplicationEventPublisherAware;
  * @see ServiceInstanceRegisteredEvent
  * @see ServiceInstancePreDeregisteredEvent
  */
+// 开启切面
 @Aspect
 public class DubboServiceRegistrationEventPublishingAspect
 		implements ApplicationEventPublisherAware {
-
+	// 定义切面 拦截Spring Cloud 的ServiceRegistry接口的注册方法 register() 最终拦截的是NacosServiceRegistry的
 	/**
 	 * The pointcut expression for {@link ServiceRegistry#register(Registration)}.
 	 */
@@ -49,11 +50,12 @@ public class DubboServiceRegistrationEventPublishingAspect
 	 * The pointcut expression for {@link ServiceRegistry#deregister(Registration)}.
 	 */
 	public static final String DEREGISTER_POINTCUT_EXPRESSION = "execution(* org.springframework.cloud.client.serviceregistry.ServiceRegistry.deregister(*)) && target(registry) && args(registration)";
-
+	// spring的事件发布者
 	private ApplicationEventPublisher applicationEventPublisher;
-
+	// 在切面拦截之后,发布服务实例 预注册事件
 	@Before(value = REGISTER_POINTCUT_EXPRESSION, argNames = "registry, registration")
 	public void beforeRegister(ServiceRegistry registry, Registration registration) {
+		// 把NacosRegistration实力对象添加到事件中
 		applicationEventPublisher.publishEvent(
 				new ServiceInstancePreRegisteredEvent(registry, registration));
 	}
