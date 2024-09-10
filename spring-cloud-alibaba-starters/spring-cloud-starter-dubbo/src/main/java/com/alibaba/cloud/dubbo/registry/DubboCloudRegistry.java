@@ -162,20 +162,24 @@ public class DubboCloudRegistry extends FailbackRegistry {
 		}
 		repository.unexportURL(url);
 	}
-
+	// SpringCloud alibaba 重写了Dubbo注册中心的订阅方法 也就是这个方法
+	// 这个方法是注解@DubboReference初始化消费之后 在RPC调用过程中 调用到的
 	@Override
 	public final void doSubscribe(URL url, NotifyListener listener) {
-
+		// 判断是否是Dubbo的后台管理协议
 		if (isAdminURL(url)) {
 			// TODO in future
 			if (logger.isWarnEnabled()) {
 				logger.warn("This feature about admin will be supported in the future.");
 			}
 		}
+		//判断是否是DubboMetadataService类
 		else if (isDubboMetadataServiceURL(url)) { // for DubboMetadataService
 			subscribeDubboMetadataServiceURLs(url, listener);
 		}
+		// 标准的Dubbo服务订阅
 		else { // for general Dubbo Services
+			//TODO 进入
 			subscribeURLs(url, listener);
 		}
 	}
@@ -183,9 +187,11 @@ public class DubboCloudRegistry extends FailbackRegistry {
 	private void subscribeURLs(URL url, NotifyListener listener) {
 
 		// Sync subscription
+		// 同步订阅 冰冻通知服务订阅者
 		subscribeURLs(url, getServices(url), listener);
 
 		// Async subscription
+		// 注册ServiceInstanceChangedEvent事件的监听器
 		registerServiceInstancesChangedListener(url,
 
 				new ApplicationListener<ServiceInstancesChangedEvent>() {
@@ -198,7 +204,8 @@ public class DubboCloudRegistry extends FailbackRegistry {
 						Set<String> serviceNames = getServices(url);
 
 						String serviceName = event.getServiceName();
-
+						// 监听到服务实例变更事件 同步订阅 并 通通知服务订阅者
+						// TODO 进入
 						if (serviceNames.contains(serviceName)) {
 							subscribeURLs(url, serviceNames, listener);
 						}
@@ -216,15 +223,16 @@ public class DubboCloudRegistry extends FailbackRegistry {
 			NotifyListener listener) {
 
 		List<URL> subscribedURLs = new LinkedList<>();
-
+		// 获取对应服务名称的最新的元数据 Dubbo注册中心
 		serviceNames.forEach(serviceName -> {
 
 			subscribeURLs(url, subscribedURLs, serviceName,
 					() -> getServiceInstances(serviceName));
 
 		});
-
-		// Notify all
+		// 将最新的接口元数据通知 到 对应的服务订阅者
+		// sprin gCloud Alibaba 用过Dubbo的时间监听机制 将Dubbo注册中心的最新元数据推送给服务订阅者
+		// Notify all TODO 进入
 		notifyAllSubscribedURLs(url, subscribedURLs, listener);
 	}
 
@@ -405,6 +413,7 @@ public class DubboCloudRegistry extends FailbackRegistry {
 		}
 
 		// Notify all
+		//TODO 将最新的订阅的元数据推送给服务订阅者
 		listener.notify(subscribedURLs);
 	}
 

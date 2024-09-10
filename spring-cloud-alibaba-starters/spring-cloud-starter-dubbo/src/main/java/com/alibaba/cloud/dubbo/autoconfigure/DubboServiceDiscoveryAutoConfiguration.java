@@ -173,7 +173,7 @@ public class DubboServiceDiscoveryAutoConfiguration {
 					"The event of the service instances[name : {} , size : {}] change is about to be dispatched",
 					serviceName, serviceInstances.size());
 		}
-		// 发布事件 查看 DubboCloudRegistry的doSubscribe
+		// 发布事件 TODO 查看 DubboCloudRegistry的doSubscribe
 		applicationEventPublisher.publishEvent(event);
 	}
 

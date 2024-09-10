@@ -345,6 +345,7 @@ public abstract class AbstractSpringCloudRegistry extends FailbackRegistry {
 	private List<ServiceInstance> doGetServiceInstances(String serviceName) {
 		List<ServiceInstance> serviceInstances = emptyList();
 		try {
+			// TODO nacos配置中心获取最新的服务实例信息
 			serviceInstances = discoveryClient.getInstances(serviceName);
 		}
 		catch (Exception e) {
