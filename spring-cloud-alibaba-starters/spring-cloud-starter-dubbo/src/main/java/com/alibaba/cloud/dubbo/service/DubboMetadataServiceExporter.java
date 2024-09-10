@@ -64,19 +64,25 @@ public class DubboMetadataServiceExporter {
 	 * export {@link DubboMetadataService} as Dubbo service.
 	 * @return the exported {@link URL URLs}
 	 */
+	// 导出最新的元数据
 	public List<URL> export() {
-
+		// 如果ServiceConfig类已经被初始化 并且已经导出完毕 则直接返回
 		if (serviceConfig == null || !serviceConfig.isExported()) {
 
 			serviceConfig = new ServiceConfig<>();
-
+			// 设置接口为DubboMetatdataService
 			serviceConfig.setInterface(DubboMetadataService.class);
+			// 设置元数据的版本号
 			// Use DubboMetadataService.VERSION as the Dubbo Service version
 			serviceConfig.setVersion(DubboMetadataService.VERSION);
+			// 设置元数据组名为当前应用名称
 			// Use current Spring application name as the Dubbo Service group
 			serviceConfig.setGroup(currentApplicationName);
+			// 设置元数据独对应的实例的可用性
 			serviceConfig.setRef(dubboMetadataService.getIfAvailable());
+			// 设置全局应用配置信息
 			serviceConfig.setApplication(applicationConfig);
+			// 导出元数据
 			serviceConfig.setProtocol(protocolConfigSupplier.get());
 
 			serviceConfig.export();

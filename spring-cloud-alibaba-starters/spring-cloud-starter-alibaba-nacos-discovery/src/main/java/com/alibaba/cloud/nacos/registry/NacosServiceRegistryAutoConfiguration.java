@@ -47,13 +47,13 @@ import org.springframework.context.annotation.Configuration;
 		AutoServiceRegistrationAutoConfiguration.class,
 		NacosDiscoveryAutoConfiguration.class })
 public class NacosServiceRegistryAutoConfiguration {
-
+	// 自动转配Nacos注册中心
 	@Bean
 	public NacosServiceRegistry nacosServiceRegistry(
 			NacosDiscoveryProperties nacosDiscoveryProperties) {
 		return new NacosServiceRegistry(nacosDiscoveryProperties);
 	}
-
+	// 自动转配Nacos的元数据
 	@Bean
 	@ConditionalOnBean(AutoServiceRegistrationProperties.class)
 	public NacosRegistration nacosRegistration(
@@ -63,7 +63,7 @@ public class NacosServiceRegistryAutoConfiguration {
 		return new NacosRegistration(registrationCustomizers.getIfAvailable(),
 				nacosDiscoveryProperties, context);
 	}
-
+	// 自动装配NacosAutoServiceRegistration
 	@Bean
 	@ConditionalOnBean(AutoServiceRegistrationProperties.class)
 	public NacosAutoServiceRegistration nacosAutoServiceRegistration(

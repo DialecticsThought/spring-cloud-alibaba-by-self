@@ -63,14 +63,17 @@ public class NacosServiceRegistry implements ServiceRegistry<Registration> {
 			log.warn("No service to register for nacos client...");
 			return;
 		}
-
+		// 构造一个 NacosNamingService类的实力对象
 		NamingService namingService = namingService();
+		// 从nacosRegistration中获取当前应用的唯一服务id
 		String serviceId = registration.getServiceId();
+		// 获取配置文件中的组名
 		String group = nacosDiscoveryProperties.getGroup();
-
+		// 将nacosRegistration类中的服务实例信息和元数据 转成nacos注册中对应的实例信息和元数据
 		Instance instance = getNacosInstanceFromRegistration(registration);
 
 		try {
+			// 调用该方法 完成服务注册
 			namingService.registerInstance(serviceId, group, instance);
 			log.info("nacos registry, {} {} {}:{} register finished", group, serviceId,
 					instance.getIp(), instance.getPort());

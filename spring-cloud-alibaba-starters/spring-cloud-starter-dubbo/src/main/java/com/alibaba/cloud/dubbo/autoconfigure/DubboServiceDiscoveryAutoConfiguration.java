@@ -158,6 +158,7 @@ public class DubboServiceDiscoveryAutoConfiguration {
 	 * @see AbstractSpringCloudRegistry#registerServiceInstancesChangedEventListener(URL,
 	 * NotifyListener)
 	 */
+	// 将服务名称以及对应的最新服务实例列表数据添加到事件对象中
 	private void dispatchServiceInstancesChangedEvent(String serviceName,
 			List<ServiceInstance> serviceInstances) {
 		if (!hasText(serviceName) || Objects.equals(currentApplicationName, serviceName)
@@ -172,6 +173,7 @@ public class DubboServiceDiscoveryAutoConfiguration {
 					"The event of the service instances[name : {} , size : {}] change is about to be dispatched",
 					serviceName, serviceInstances.size());
 		}
+		// 发布事件 查看 DubboCloudRegistry的doSubscribe
 		applicationEventPublisher.publishEvent(event);
 	}
 
@@ -542,18 +544,24 @@ public class DubboServiceDiscoveryAutoConfiguration {
 		public void onSubscribedServicesChangedEvent(SubscribedServicesChangedEvent event)
 				throws Exception {
 			// subscribe EventListener for each service
+			// 遍历需要订阅的服务列表 添加监听器
 			event.getNewSubscribedServices().forEach(this::subscribeEventListener);
 		}
 
 		private void subscribeEventListener(String serviceName) {
+			// 去重
 			if (listeningServices.add(serviceName)) {
 				try {
 					String group = nacosDiscoveryProperties.getGroup();
+					// nameService类的subscribe方法订阅对应的服务 并添加监听器
 					namingService.subscribe(serviceName, group, event -> {
 						if (event instanceof NamingEvent) {
 							NamingEvent namingEvent = (NamingEvent) event;
+							// 将从 Nacos注册中心返回的服务实例列表数据格式 转成Spring Cloud支持的服务列表数据格式
 							List<ServiceInstance> serviceInstances = hostToServiceInstanceList(
 									namingEvent.getInstances(), serviceName);
+							// 向事件发布中心发布事件
+							// TODO 进入
 							dispatchServiceInstancesChangedEvent(serviceName,
 									serviceInstances);
 						}

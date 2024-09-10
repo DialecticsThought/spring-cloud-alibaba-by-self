@@ -160,12 +160,17 @@ public class DubboServiceRegistrationAutoConfiguration {
 			return;
 		}
 		synchronized (registration) {
+			// 从全局的NacosRegistration实例对象中获取存储元数据的对象
 			Map<String, String> metadata = registration.getMetadata();
+			// 添加新的元数据到metadata
+			// TODO 进入
 			attachDubboMetadataServiceMetadata(metadata);
 		}
 	}
 
 	private void attachDubboMetadataServiceMetadata(Map<String, String> metadata) {
+		// dubboServiceMetadataRepository中获取最新的元数据
+		// 进入
 		Map<String, String> serviceMetadata = dubboServiceMetadataRepository
 				.getDubboMetadataServiceMetadata();
 		if (!isEmpty(serviceMetadata)) {
@@ -207,11 +212,13 @@ public class DubboServiceRegistrationAutoConfiguration {
 						return true;
 					}));
 		}
-
+		// 监听ServiceInstancePreRegisterEvent事件
 		@EventListener(ServiceInstancePreRegisteredEvent.class)
 		public void onServiceInstancePreRegistered(
 				ServiceInstancePreRegisteredEvent event) {
+			// 从事件中 获取全局的实例对象
 			Registration registration = event.getSource();
+			// 判断 DubboBootstrap是否已开启
 			if (!(registration instanceof EurekaRegistration)) {
 				return;
 			}
@@ -225,7 +232,7 @@ public class DubboServiceRegistrationAutoConfiguration {
 				EurekaInstanceConfigBean config = (EurekaInstanceConfigBean) eurekaRegistration
 						.getInstanceConfig();
 				config.setInitialStatus(InstanceInfo.InstanceStatus.UP);
-
+				// 将应用需要注册的服务接口的元数据添加到Nacos注册中心 TODO 进入
 				attachDubboMetadataServiceMetadata(instanceInfo.getMetadata());
 				eurekaRegistration.getApplicationInfoManager()
 						.registerAppMetadata(instanceInfo.getMetadata());

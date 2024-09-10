@@ -292,15 +292,17 @@ public class DubboServiceMetadataRepository
 	 * @return non-null read-only {@link Map}
 	 */
 	public Map<String, String> getDubboMetadataServiceMetadata() {
-
+		// 用 DubboMetaDataServiceExporter类导出所有被注解@DubooService标记的服务接口对应的元数据
+		// TODO 进入
 		List<URL> dubboMetadataServiceURLs = dubboMetadataServiceExporter.export();
-
+		// 元数据去重
 		// remove the exported URLs of DubboMetadataService
 		removeDubboMetadataServiceURLs(dubboMetadataServiceURLs);
-
+		// 重新赋值一个新的元数据对象
 		Map<String, String> metadata = newHashMap();
-
+		// 添加Dubbo协议相关的元数据
 		addDubboMetadataServiceURLsMetadata(metadata, dubboMetadataServiceURLs);
+		// 返回最新的元数据
 		addDubboProtocolsPortMetadata(metadata);
 
 		return Collections.unmodifiableMap(metadata);
