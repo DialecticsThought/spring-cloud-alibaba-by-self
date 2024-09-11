@@ -40,51 +40,59 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnProperty(name = "spring.cloud.nacos.config.enabled", matchIfMissing = true)
 public class NacosConfigAutoConfiguration {
 
-	@Bean
-	public NacosConfigProperties nacosConfigProperties(ApplicationContext context) {
-		if (context.getParent() != null
-				&& BeanFactoryUtils.beanNamesForTypeIncludingAncestors(
-						context.getParent(), NacosConfigProperties.class).length > 0) {
-			return BeanFactoryUtils.beanOfTypeIncludingAncestors(context.getParent(),
-					NacosConfigProperties.class);
-		}
-		return new NacosConfigProperties();
-	}
+    @Bean
+    public NacosConfigProperties nacosConfigProperties(ApplicationContext context) {
+        if (context.getParent() != null
+                && BeanFactoryUtils.beanNamesForTypeIncludingAncestors(
+                context.getParent(), NacosConfigProperties.class).length > 0) {
+            return BeanFactoryUtils.beanOfTypeIncludingAncestors(context.getParent(),
+                    NacosConfigProperties.class);
+        }
+        return new NacosConfigProperties();
+    }
 
-	@Bean
-	public NacosRefreshProperties nacosRefreshProperties() {
-		return new NacosRefreshProperties();
-	}
+    @Bean
+    public NacosRefreshProperties nacosRefreshProperties() {
+        return new NacosRefreshProperties();
+    }
 
-	@Bean
-	public NacosRefreshHistory nacosRefreshHistory() {
-		return new NacosRefreshHistory();
-	}
+    @Bean
+    public NacosRefreshHistory nacosRefreshHistory() {
+        return new NacosRefreshHistory();
+    }
 
-	@Bean
-	public NacosConfigManager nacosConfigManager(
-			NacosConfigProperties nacosConfigProperties) {
-		return new NacosConfigManager(nacosConfigProperties);
-	}
+    @Bean
+    public NacosConfigManager nacosConfigManager(
+            NacosConfigProperties nacosConfigProperties) {
+        return new NacosConfigManager(nacosConfigProperties);
+    }
 
-	@Bean
-	public NacosContextRefresher nacosContextRefresher(
-			NacosConfigManager nacosConfigManager,
-			NacosRefreshHistory nacosRefreshHistory) {
-		// Consider that it is not necessary to be compatible with the previous
-		// configuration
-		// and use the new configuration if necessary.
-		return new NacosContextRefresher(nacosConfigManager, nacosRefreshHistory);
-	}
+    /**
+     * 重点
+     *
+     * @param nacosConfigManager
+     * @param nacosRefreshHistory
+     * @return
+     */
+    @Bean
+    public NacosContextRefresher nacosContextRefresher(
+            NacosConfigManager nacosConfigManager,
+            NacosRefreshHistory nacosRefreshHistory) {
+        // Consider that it is not necessary to be compatible with the previous
+        // configuration
+        // and use the new configuration if necessary.
+        // TODO 进入
+        return new NacosContextRefresher(nacosConfigManager, nacosRefreshHistory);
+    }
 
-	@Bean
-	@ConditionalOnMissingBean(search = SearchStrategy.CURRENT)
-	@ConditionalOnNonDefaultBehavior
-	public ConfigurationPropertiesRebinder smartConfigurationPropertiesRebinder(
-			ConfigurationPropertiesBeans beans) {
-		// If using default behavior, not use SmartConfigurationPropertiesRebinder.
-		// Minimize te possibility of making mistakes.
-		return new SmartConfigurationPropertiesRebinder(beans);
-	}
+    @Bean
+    @ConditionalOnMissingBean(search = SearchStrategy.CURRENT)
+    @ConditionalOnNonDefaultBehavior
+    public ConfigurationPropertiesRebinder smartConfigurationPropertiesRebinder(
+            ConfigurationPropertiesBeans beans) {
+        // If using default behavior, not use SmartConfigurationPropertiesRebinder.
+        // Minimize te possibility of making mistakes.
+        return new SmartConfigurationPropertiesRebinder(beans);
+    }
 
 }

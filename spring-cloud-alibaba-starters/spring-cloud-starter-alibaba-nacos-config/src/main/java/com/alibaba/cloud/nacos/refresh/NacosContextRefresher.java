@@ -47,137 +47,159 @@ import org.springframework.context.ApplicationListener;
  * @author pbting
  */
 public class NacosContextRefresher
-		implements ApplicationListener<ApplicationReadyEvent>, ApplicationContextAware {
+        implements ApplicationListener<ApplicationReadyEvent>, ApplicationContextAware {
 
-	private final static Logger log = LoggerFactory
-			.getLogger(NacosContextRefresher.class);
+    private final static Logger log = LoggerFactory
+            .getLogger(NacosContextRefresher.class);
 
-	private static final AtomicLong REFRESH_COUNT = new AtomicLong(0);
-	private final boolean isRefreshEnabled;
-	private final NacosRefreshHistory nacosRefreshHistory;
-	private NacosConfigProperties nacosConfigProperties;
-	private ConfigService configService;
+    private static final AtomicLong REFRESH_COUNT = new AtomicLong(0);
+    private final boolean isRefreshEnabled;
+    private final NacosRefreshHistory nacosRefreshHistory;
+    private NacosConfigProperties nacosConfigProperties;
+    private ConfigService configService;
 
-	private NacosConfigManager configManager;
+    private NacosConfigManager configManager;
 
-	private ApplicationContext applicationContext;
+    private ApplicationContext applicationContext;
 
-	private AtomicBoolean ready = new AtomicBoolean(false);
+    private AtomicBoolean ready = new AtomicBoolean(false);
 
-	private Map<String, Listener> listenerMap = new ConcurrentHashMap<>(16);
+    private Map<String, Listener> listenerMap = new ConcurrentHashMap<>(16);
 
-	public NacosContextRefresher(NacosConfigManager nacosConfigManager,
-			NacosRefreshHistory refreshHistory) {
-		this.configManager = nacosConfigManager;
-		this.nacosConfigProperties = nacosConfigManager.getNacosConfigProperties();
-		this.nacosRefreshHistory = refreshHistory;
-		this.isRefreshEnabled = this.nacosConfigProperties.isRefreshEnabled();
-	}
+    public NacosContextRefresher(NacosConfigManager nacosConfigManager,
+                                 NacosRefreshHistory refreshHistory) {
+        this.configManager = nacosConfigManager;
+        this.nacosConfigProperties = nacosConfigManager.getNacosConfigProperties();
+        this.nacosRefreshHistory = refreshHistory;
+        this.isRefreshEnabled = this.nacosConfigProperties.isRefreshEnabled();
+    }
 
-	/**
-	 * recommend to use
-	 * {@link NacosContextRefresher#NacosContextRefresher(NacosConfigManager, NacosRefreshHistory)}.
-	 * @param refreshProperties refreshProperties
-	 * @param refreshHistory refreshHistory
-	 * @param configService configService
-	 */
-	@Deprecated
-	public NacosContextRefresher(NacosRefreshProperties refreshProperties,
-			NacosRefreshHistory refreshHistory, ConfigService configService) {
-		this.isRefreshEnabled = refreshProperties.isEnabled();
-		this.nacosRefreshHistory = refreshHistory;
-		this.configService = configService;
-	}
+    /**
+     * recommend to use
+     * {@link NacosContextRefresher#NacosContextRefresher(NacosConfigManager, NacosRefreshHistory)}.
+     *
+     * @param refreshProperties refreshProperties
+     * @param refreshHistory    refreshHistory
+     * @param configService     configService
+     */
+    @Deprecated
+    public NacosContextRefresher(NacosRefreshProperties refreshProperties,
+                                 NacosRefreshHistory refreshHistory, ConfigService configService) {
+        this.isRefreshEnabled = refreshProperties.isEnabled();
+        this.nacosRefreshHistory = refreshHistory;
+        this.configService = configService;
+    }
 
-	public static long getRefreshCount() {
-		return REFRESH_COUNT.get();
-	}
+    public static long getRefreshCount() {
+        return REFRESH_COUNT.get();
+    }
 
-	public static void refreshCountIncrement() {
-		REFRESH_COUNT.incrementAndGet();
-	}
+    public static void refreshCountIncrement() {
+        REFRESH_COUNT.incrementAndGet();
+    }
 
-	@Override
-	public void onApplicationEvent(ApplicationReadyEvent event) {
-		// many Spring context
-		if (this.ready.compareAndSet(false, true)) {
-			this.registerNacosListenersForApplications();
-		}
-	}
+    @Override
+    public void onApplicationEvent(ApplicationReadyEvent event) {
+        // many Spring context
+        if (this.ready.compareAndSet(false, true)) {
+            this.registerNacosListenersForApplications();
+        }
+    }
 
-	@Override
-	public void setApplicationContext(ApplicationContext applicationContext) {
-		this.applicationContext = applicationContext;
-	}
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) {
+        this.applicationContext = applicationContext;
+    }
 
-	/**
-	 * register Nacos Listeners.
-	 */
-	private void registerNacosListenersForApplications() {
-		if (isRefreshEnabled()) {
-			for (NacosPropertySource propertySource : NacosPropertySourceRepository
-					.getAll()) {
-				if (!propertySource.isRefreshable()) {
-					continue;
-				}
-				String dataId = propertySource.getDataId();
-				registerNacosListener(propertySource.getGroup(), dataId);
-			}
-		}
-	}
+    /**
+     * register Nacos Listeners.
+     * TODO 重点
+     */
+    private void registerNacosListenersForApplications() {
+        // 是否开启配置刷新 spring.cloud.nacos.config.refreshEnabled属性的值为true, 表示开启配置刷新
+        if (isRefreshEnabled()) {
+            // 这个就是从缓存中拿到之前获取完配置内容后，封装成NacosPropertySource之后，缓存起来的内容
+            // ConcurrentHashMap<String, NacosPropertySource> NACOS_PROPERTY_SOURCE_REPOSITORY
+            for (NacosPropertySource propertySource : NacosPropertySourceRepository
+                    .getAll()) {
+                if (!propertySource.isRefreshable()) {
+                    continue;
+                }
 
-	private void registerNacosListener(final String groupKey, final String dataKey) {
-		String key = NacosPropertySourceRepository.getMapKey(dataKey, groupKey);
-		Listener listener = listenerMap.computeIfAbsent(key,
-				lst -> new AbstractSharedListener() {
-					@Override
-					public void innerReceive(String dataId, String group,
-							String configInfo) {
-						refreshCountIncrement();
-						nacosRefreshHistory.addRefreshRecord(dataId, group, configInfo);
-						NacosSnapshotConfigManager.putConfigSnapshot(dataId, group,
-								configInfo);
-						applicationContext.publishEvent(
-								new RefreshEvent(this, null, "Refresh Nacos config"));
-						if (log.isDebugEnabled()) {
-							log.debug(String.format(
-									"Refresh Nacos config group=%s,dataId=%s,configInfo=%s",
-									group, dataId, configInfo));
-						}
-					}
-				});
-		try {
-			if (configService == null && configManager != null) {
-				configService = configManager.getConfigService();
-			}
-			configService.addListener(dataKey, groupKey, listener);
-		}
-		catch (NacosException e) {
-			log.warn(String.format(
-					"register fail for nacos listener ,dataId=[%s],group=[%s]", dataKey,
-					groupKey), e);
-		}
-	}
+                // 获取配置dataId
+                String dataId = propertySource.getDataId();
+                // 注册nacos配置监听器
+                // TODO 进入
+                registerNacosListener(propertySource.getGroup(), dataId);
+            }
+        }
+    }
 
-	public NacosConfigProperties getNacosConfigProperties() {
-		return nacosConfigProperties;
-	}
+    /**
+     * 和 client端的com.alibaba.nacos.client.config.impl.CacheData#safeNotifyListener联动
+     *
+     * @param groupKey
+     * @param dataKey
+     */
+    private void registerNacosListener(final String groupKey, final String dataKey) {
+        // key = {dataId,group}
+        String key = NacosPropertySourceRepository.getMapKey(dataKey, groupKey);
+        // 这里声明了一个监听器，注意这只是声明，后续配置发生变化时，会回调到这里。
+        // 监听采用的回调的思想，当服务端通知的时候，调用回调方法
+        Listener listener = listenerMap.computeIfAbsent(key,
+                lst -> new AbstractSharedListener() {
+                    @Override
+                    public void innerReceive(String dataId, String group,
+                                             String configInfo) {
+                        // 累加配置刷新次数
+                        refreshCountIncrement();
+                        // 添加一条刷新记录
+                        nacosRefreshHistory.addRefreshRecord(dataId, group, configInfo);
+                        // 通过Spring上下文发布一个RefreshEvent刷新事件
+                        NacosSnapshotConfigManager.putConfigSnapshot(dataId, group,
+                                configInfo);
+                        applicationContext.publishEvent(
+                                new RefreshEvent(this, null, "Refresh Nacos config"));
+                        if (log.isDebugEnabled()) {
+                            log.debug(String.format(
+                                    "Refresh Nacos config group=%s,dataId=%s,configInfo=%s",
+                                    group, dataId, configInfo));
+                        }
+                    }
+                });
+        try {
+            if (configService == null && configManager != null) {
+                configService = configManager.getConfigService();
+            }
+            // 注册配置监听器，以 dataId + groupId + namespace 为维度进行注册的
+            // TODO  进入 看nacos client代码
+            configService.addListener(dataKey, groupKey, listener);
+        } catch (NacosException e) {
+            log.warn(String.format(
+                    "register fail for nacos listener ,dataId=[%s],group=[%s]", dataKey,
+                    groupKey), e);
+        }
+    }
 
-	public NacosContextRefresher setNacosConfigProperties(
-			NacosConfigProperties nacosConfigProperties) {
-		this.nacosConfigProperties = nacosConfigProperties;
-		return this;
-	}
+    public NacosConfigProperties getNacosConfigProperties() {
+        return nacosConfigProperties;
+    }
 
-	public boolean isRefreshEnabled() {
-		if (null == nacosConfigProperties) {
-			return isRefreshEnabled;
-		}
-		// Compatible with older configurations
-		if (nacosConfigProperties.isRefreshEnabled() && !isRefreshEnabled) {
-			return false;
-		}
-		return isRefreshEnabled;
-	}
+    public NacosContextRefresher setNacosConfigProperties(
+            NacosConfigProperties nacosConfigProperties) {
+        this.nacosConfigProperties = nacosConfigProperties;
+        return this;
+    }
+
+    public boolean isRefreshEnabled() {
+        if (null == nacosConfigProperties) {
+            return isRefreshEnabled;
+        }
+        // Compatible with older configurations
+        if (nacosConfigProperties.isRefreshEnabled() && !isRefreshEnabled) {
+            return false;
+        }
+        return isRefreshEnabled;
+    }
 
 }

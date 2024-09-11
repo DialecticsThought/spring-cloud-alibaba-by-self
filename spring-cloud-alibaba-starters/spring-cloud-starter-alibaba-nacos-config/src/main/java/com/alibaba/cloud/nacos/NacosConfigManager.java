@@ -49,6 +49,8 @@ public class NacosConfigManager {
 			synchronized (NacosConfigManager.class) {
 				try {
 					if (Objects.isNull(service)) {
+						// TODO 进入
+						// 创建流程最终会委托给 ConfigFactory，使用反射方式创建一个 NacosConfigService 的实例对象
 						service = NacosFactory.createConfigService(
 								nacosConfigProperties.assembleConfigServiceProperties());
 					}
@@ -65,6 +67,7 @@ public class NacosConfigManager {
 
 	public ConfigService getConfigService() {
 		if (Objects.isNull(service)) {
+			//TODO 进入
 			createConfigService(this.nacosConfigProperties);
 		}
 		return service;

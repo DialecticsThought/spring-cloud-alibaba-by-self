@@ -38,6 +38,9 @@ import org.springframework.util.StringUtils;
 /**
  * @author xiaojing
  * @author pbting
+ * 在项目启动的时候（上下文准备阶段）通过NacosPropertySourceLocator就拉取到了远程 Nacos 中的配置信息，并且封装成 NacosPropertySource对象
+ * PropertySourceBootstrapConfiguration依靠ApplicationContextInitializer机制（容器刷新之前支持一些自定义初始化工作），
+ * 将前面封装好的NacosPropertySource对象放到了 Spring 的环境变量Environment 中
  */
 @Order(0)
 public class NacosPropertySourceLocator implements PropertySourceLocator {
@@ -75,6 +78,10 @@ public class NacosPropertySourceLocator implements PropertySourceLocator {
 	@Override
 	public PropertySource<?> locate(Environment env) {
 		nacosConfigProperties.setEnvironment(env);
+		// 通过反射创建出一个NacosConfigService实例
+		// TODO 进入方法
+		// NacosConfigService 是一个很核心的类，配置的获取，监听器的注册都需要经此
+		// 查看  NacosConfigService 初始化方法 因为 会创建ClientWorker 查看client
 		ConfigService configService = nacosConfigManager.getConfigService();
 
 		if (null == configService) {
@@ -82,6 +89,7 @@ public class NacosPropertySourceLocator implements PropertySourceLocator {
 			return null;
 		}
 		long timeout = nacosConfigProperties.getTimeout();
+		// 配置获取（使用 configService）、配置封装、配置缓存等操作
 		nacosPropertySourceBuilder = new NacosPropertySourceBuilder(configService,
 				timeout);
 		String name = nacosConfigProperties.getName();
@@ -97,9 +105,14 @@ public class NacosPropertySourceLocator implements PropertySourceLocator {
 
 		CompositePropertySource composite = new CompositePropertySource(
 				NACOS_PROPERTY_SOURCE_NAME);
-
+		// 加载共享的配置信息
+		// TODO 进入
 		loadSharedConfiguration(composite);
+		// 加载扩展的配置信息
+		//TODO 进入
 		loadExtConfiguration(composite);
+		// 加载应用自身的配置信息
+		//TODO 进入
 		loadApplicationConfiguration(composite, dataIdPrefix, nacosConfigProperties, env);
 		return composite;
 	}
@@ -109,10 +122,13 @@ public class NacosPropertySourceLocator implements PropertySourceLocator {
 	 */
 	private void loadSharedConfiguration(
 			CompositePropertySource compositePropertySource) {
+		// 获取共享配置
 		List<NacosConfigProperties.Config> sharedConfigs = nacosConfigProperties
 				.getSharedConfigs();
 		if (!CollectionUtils.isEmpty(sharedConfigs)) {
 			checkConfiguration(sharedConfigs, "shared-configs");
+			// 加载配置
+			//TODO 进入
 			loadNacosConfiguration(compositePropertySource, sharedConfigs);
 		}
 	}
@@ -121,29 +137,41 @@ public class NacosPropertySourceLocator implements PropertySourceLocator {
 	 * load extensional configuration.
 	 */
 	private void loadExtConfiguration(CompositePropertySource compositePropertySource) {
+		// 获取扩展配置
 		List<NacosConfigProperties.Config> extConfigs = nacosConfigProperties
 				.getExtensionConfigs();
 		if (!CollectionUtils.isEmpty(extConfigs)) {
 			checkConfiguration(extConfigs, "extension-configs");
+			// 获取扩展配置
 			loadNacosConfiguration(compositePropertySource, extConfigs);
 		}
 	}
 
 	/**
 	 * load configuration of application.
+	 * 同时会加载以下三种配置，分别是
+	 * 1、不带扩展名后缀查询，application
+	 * 2、带扩展名后缀查询，application.yml
+	 * 3、带环境，带扩展名后缀查询，application-prod.yml
 	 */
 	private void loadApplicationConfiguration(
 			CompositePropertySource compositePropertySource, String dataIdPrefix,
 			NacosConfigProperties properties, Environment environment) {
+		// 配置文件扩展名
 		String fileExtension = properties.getFileExtension();
+		// 配置组名
 		String nacosGroup = properties.getGroup();
 		// load directly once by default
+		// 不带扩展名后缀查询，application
+		//TODO 进入 核心
 		loadNacosDataIfPresent(compositePropertySource, dataIdPrefix, nacosGroup,
 				fileExtension, true);
 		// load with suffix, which have a higher priority than the default
+		// 带扩展名后缀查询，application.yml
 		loadNacosDataIfPresent(compositePropertySource,
 				dataIdPrefix + DOT + fileExtension, nacosGroup, fileExtension, true);
 		// Loaded with profile, which have a higher priority than the suffix
+		// 带环境，带扩展名后缀查询，application-prod.yml
 		for (String profile : environment.getActiveProfiles()) {
 			String dataId = dataIdPrefix + SEP1 + profile + DOT + fileExtension;
 			loadNacosDataIfPresent(compositePropertySource, dataId, nacosGroup,
@@ -186,6 +214,7 @@ public class NacosPropertySourceLocator implements PropertySourceLocator {
 		if (null == group || group.trim().length() < 1) {
 			return;
 		}
+		//TODO 进入 核心
 		NacosPropertySource propertySource = this.loadNacosPropertySource(dataId, group,
 				fileExtension, isRefreshable);
 		this.addFirstPropertySource(composite, propertySource, false);
@@ -199,6 +228,9 @@ public class NacosPropertySourceLocator implements PropertySourceLocator {
 						group);
 			}
 		}
+		//TODO 进入 核心
+		// nacosPropertySourceBuilder.build()方法调用 loadNacosData 获取配置，然后封装成 NacosPropertySource，
+		// 并且将该对象缓存到 NacosPropertySourceRepository中，后续会用到。
 		return nacosPropertySourceBuilder.build(dataId, group, fileExtension,
 				isRefreshable);
 	}

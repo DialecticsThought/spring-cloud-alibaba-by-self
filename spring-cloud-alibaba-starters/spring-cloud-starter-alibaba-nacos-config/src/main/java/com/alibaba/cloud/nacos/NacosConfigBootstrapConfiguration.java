@@ -31,6 +31,9 @@ import org.springframework.context.annotation.Configuration;
 /**
  * @author xiaojing
  * @author freeman
+ * 在项目启动的时候（上下文准备阶段）通过NacosPropertySourceLocator就拉取到了远程 Nacos 中的配置信息，并且封装成 NacosPropertySource对象
+ * PropertySourceBootstrapConfiguration依靠ApplicationContextInitializer机制（容器刷新之前支持一些自定义初始化工作），
+ * 将前面封装好的NacosPropertySource对象放到了 Spring 的环境变量Environment 中
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(name = "spring.cloud.nacos.config.enabled", matchIfMissing = true)

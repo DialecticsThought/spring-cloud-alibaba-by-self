@@ -71,10 +71,14 @@ public class NacosPropertySourceBuilder {
 	 */
 	NacosPropertySource build(String dataId, String group, String fileExtension,
 			boolean isRefreshable) {
+		// 获取配置
 		List<PropertySource<?>> propertySources = loadNacosData(dataId, group,
 				fileExtension);
+		// 将配置封装成NacosPropertySource
 		NacosPropertySource nacosPropertySource = new NacosPropertySource(propertySources,
 				group, dataId, new Date(), isRefreshable);
+		// 缓存NacosPropertySource：ConcurrentHashMap<String, NacosPropertySource> NACOS_PROPERTY_SOURCE_REPOSITORY
+		// key：{dataId,group}
 		NacosPropertySourceRepository.collectNacosPropertySource(nacosPropertySource);
 		return nacosPropertySource;
 	}
@@ -86,6 +90,8 @@ public class NacosPropertySourceBuilder {
 			String configSnapshot = NacosSnapshotConfigManager.getAndRemoveConfigSnapshot(dataId, group);
 			if (StringUtils.isEmpty(configSnapshot)) {
 				log.debug("get config from nacos, dataId: {}, group: {}", dataId, group);
+				// 通过NacosConfigService加载配置内容
+				// TODO 进入 看nacos client代码
 				data = configService.getConfig(dataId, group, timeout);
 			}
 			else {
@@ -104,6 +110,7 @@ public class NacosPropertySourceBuilder {
 						"Loading nacos data, dataId: '%s', group: '%s', data: %s", dataId,
 						group, data));
 			}
+			// 解析返回的字符串
 			return NacosDataParserHandler.getInstance().parseNacosData(dataId, data,
 					fileExtension);
 		}
