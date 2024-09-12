@@ -50,9 +50,15 @@ public class NacosDiscoveryClient implements DiscoveryClient {
 		return DESCRIPTION;
 	}
 
+	/**
+	 * 重点
+	 * @param serviceId
+	 * @return
+	 */
 	@Override
 	public List<ServiceInstance> getInstances(String serviceId) {
 		try {
+			//TODO 查看 该类 和 该方法
 			return serviceDiscovery.getInstances(serviceId);
 		}
 		catch (Exception e) {
@@ -61,9 +67,14 @@ public class NacosDiscoveryClient implements DiscoveryClient {
 		}
 	}
 
+	/**
+	 * 重点
+	 * @return
+	 */
 	@Override
 	public List<String> getServices() {
 		try {
+			//TODO 查看 该类 和 该方法
 			return serviceDiscovery.getServices();
 		}
 		catch (Exception e) {

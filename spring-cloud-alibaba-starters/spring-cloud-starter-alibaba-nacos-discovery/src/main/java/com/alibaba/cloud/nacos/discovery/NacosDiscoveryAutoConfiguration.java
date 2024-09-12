@@ -29,16 +29,20 @@ import org.springframework.context.annotation.Configuration;
  * @author <a href="mailto:echooy.mxq@gmail.com">echooymxq</a>
  **/
 @Configuration(proxyBeanMethods = false)
-@ConditionalOnDiscoveryEnabled
-@ConditionalOnNacosDiscoveryEnabled
+@ConditionalOnDiscoveryEnabled// spring.cloud.discovery.enabled=true时才生效,缺省值为true
+@ConditionalOnNacosDiscoveryEnabled// spring.cloud.discovery.enabled=true时才生效,缺省值为true
 public class NacosDiscoveryAutoConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean
 	public NacosDiscoveryProperties nacosProperties() {
+		// 匹配配置文件中以“spring.cloud.nacos.discovery”为前缀的那些属性，
+		// 如namespace、username、password、serverAddr等属性
 		return new NacosDiscoveryProperties();
 	}
 
+
+	// 创建NacosServiceDiscovery bean对象
 	@Bean
 	@ConditionalOnMissingBean
 	public NacosServiceDiscovery nacosServiceDiscovery(

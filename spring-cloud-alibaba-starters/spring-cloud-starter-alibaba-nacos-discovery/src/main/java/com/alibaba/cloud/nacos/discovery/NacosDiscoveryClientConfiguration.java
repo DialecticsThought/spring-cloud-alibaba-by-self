@@ -44,8 +44,11 @@ import org.springframework.context.annotation.Configuration;
 @AutoConfigureBefore({ SimpleDiscoveryClientAutoConfiguration.class,
 		CommonsClientAutoConfiguration.class })
 @AutoConfigureAfter(NacosDiscoveryAutoConfiguration.class)
+// 在NacosDiscoveryAutoConfiguration自动装配类执行完成后才执行
 public class NacosDiscoveryClientConfiguration {
 
+	// 创建DiscoveryClient bean对象
+	// TODO 查看NacosDiscoveryClient
 	@Bean
 	public DiscoveryClient nacosDiscoveryClient(
 			NacosServiceDiscovery nacosServiceDiscovery) {
