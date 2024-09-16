@@ -49,7 +49,7 @@ public class NacosServiceDiscovery {
     /**
      * Return all instances for the given service.
      * <p>
-     * 返回指定group和servic的所有实例
+     * 返回指定group和service的所有实例
      *
      * @param serviceId id of service
      * @return list of instances
@@ -71,7 +71,7 @@ public class NacosServiceDiscovery {
      * Return the names of all services.
      * 返回指定group的所有服务名称
      *
-     * 查看nacosClient端的com.alibaba.nacos.api.naming.NamingFactory#createNamingService(java.lang.String)
+     * TODO 查看nacosClient端的com.alibaba.nacos.api.naming.NamingFactory#createNamingService(java.lang.String)
      * @return list of service names
      * @throws NacosException nacosException
      */
@@ -80,7 +80,7 @@ public class NacosServiceDiscovery {
         String group = discoveryProperties.getGroup();
         // namingService(): 通过反射创建一个NacosNamingService对象
         // 最终会调用NamingGrpcClientProxy#getServiceList()方法
-        // TODO 进入getServicesOfServer
+        // TODO 查看nacosClient端 的 com.alibaba.nacos.api.naming.NamingFactory#createNamingService(java.lang.String)
         // TODo 查看nacosClient端 的 NacosNamingService#getServicesOfServer
         ListView<String> services = namingService().getServicesOfServer(1,
                 Integer.MAX_VALUE, group);
