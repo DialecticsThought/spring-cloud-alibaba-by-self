@@ -40,6 +40,12 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnProperty(name = "spring.cloud.nacos.config.enabled", matchIfMissing = true)
 public class NacosConfigAutoConfiguration {
 
+    /**
+     * 作用：封装 Nacos 配置的属性，如服务地址、命名空间等。
+     * 用途：允许在应用程序中访问 Nacos 配置的各种设置，通过注入该 Bean，可以轻松获取和管理 Nacos 的配置
+     * @param context
+     * @return
+     */
     @Bean
     public NacosConfigProperties nacosConfigProperties(ApplicationContext context) {
         if (context.getParent() != null
@@ -51,16 +57,32 @@ public class NacosConfigAutoConfiguration {
         return new NacosConfigProperties();
     }
 
+    /**
+     * 作用：管理 Nacos 配置的刷新策略，例如是否自动刷新配置。
+     * 用途：提供有关如何处理配置更新的配置选项，帮助应用决定何时刷新配置。
+     * @return
+     */
     @Bean
     public NacosRefreshProperties nacosRefreshProperties() {
         return new NacosRefreshProperties();
     }
 
+    /**
+     * 作用：记录配置刷新的历史信息。
+     * 用途：跟踪配置变化，便于后续分析和调试配置变更的影响。
+     * @return
+     */
     @Bean
     public NacosRefreshHistory nacosRefreshHistory() {
         return new NacosRefreshHistory();
     }
 
+    /**
+     * 作用：管理 Nacos 配置的生命周期，包括获取和更新配置的功能。
+     * 用途：提供对 Nacos 配置的集中管理，使其他组件可以通过它获取当前的配置状态
+     * @param nacosConfigProperties
+     * @return
+     */
     @Bean
     public NacosConfigManager nacosConfigManager(
             NacosConfigProperties nacosConfigProperties) {
@@ -68,8 +90,9 @@ public class NacosConfigAutoConfiguration {
     }
 
     /**
-     * 重点
-     *
+     * TODO 重点
+     * 作用：处理上下文的刷新逻辑。
+     * 用途：当 Nacos 配置发生变化时，自动更新 Spring 上下文中的相应 Bean，实现动态配置更新
      * @param nacosConfigManager
      * @param nacosRefreshHistory
      * @return
@@ -85,6 +108,12 @@ public class NacosConfigAutoConfiguration {
         return new NacosContextRefresher(nacosConfigManager, nacosRefreshHistory);
     }
 
+    /**
+     * 作用：支持动态更新的配置属性重绑定器。
+     * 用途：在配置更新后，自动将新的属性值重新绑定到相应的 Bean 上，以确保应用程序使用最新的配置
+     * @param beans
+     * @return
+     */
     @Bean
     @ConditionalOnMissingBean(search = SearchStrategy.CURRENT)
     @ConditionalOnNonDefaultBehavior

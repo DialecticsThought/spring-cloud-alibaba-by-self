@@ -77,29 +77,33 @@ public class NacosPropertySourceLocator implements PropertySourceLocator {
 
 	@Override
 	public PropertySource<?> locate(Environment env) {
+		// 设置环境
 		nacosConfigProperties.setEnvironment(env);
 		// 通过反射创建出一个NacosConfigService实例
 		// TODO 进入方法
 		// NacosConfigService 是一个很核心的类，配置的获取，监听器的注册都需要经此
-		// 查看  NacosConfigService 初始化方法 因为 会创建ClientWorker 查看client
+		// 查看  NacosConfigService 初始化方法 因为 会创建ClientWorker 查看client端
 		ConfigService configService = nacosConfigManager.getConfigService();
 
-		if (null == configService) {
+		if (null == configService) { // ConfigService 为空判断
 			log.warn("no instance of config service found, can't load config from nacos");
 			return null;
 		}
+		// 超时时间
 		long timeout = nacosConfigProperties.getTimeout();
 		// 配置获取（使用 configService）、配置封装、配置缓存等操作
 		nacosPropertySourceBuilder = new NacosPropertySourceBuilder(configService,
 				timeout);
 		String name = nacosConfigProperties.getName();
-
+		// 获取前缀
 		String dataIdPrefix = nacosConfigProperties.getPrefix();
+		// 前缀为空判断
 		if (StringUtils.isEmpty(dataIdPrefix)) {
 			dataIdPrefix = name;
 		}
-
+		// 再次前缀为空判断
 		if (StringUtils.isEmpty(dataIdPrefix)) {
+			//默认使用 spring.application.name 的值
 			dataIdPrefix = env.getProperty("spring.application.name");
 		}
 
@@ -112,7 +116,7 @@ public class NacosPropertySourceLocator implements PropertySourceLocator {
 		//TODO 进入
 		loadExtConfiguration(composite);
 		// 加载应用自身的配置信息
-		//TODO 进入
+		//TODO 进入 查看
 		loadApplicationConfiguration(composite, dataIdPrefix, nacosConfigProperties, env);
 		return composite;
 	}
@@ -214,9 +218,12 @@ public class NacosPropertySourceLocator implements PropertySourceLocator {
 		if (null == group || group.trim().length() < 1) {
 			return;
 		}
+		// 经过 上面 dataId group 判断后 开始加载配置中心
+		// 读取的配置加入 propertySources
 		//TODO 进入 核心
 		NacosPropertySource propertySource = this.loadNacosPropertySource(dataId, group,
 				fileExtension, isRefreshable);
+		// private final Set<PropertySource<?>> propertySources = new LinkedHashSet();
 		this.addFirstPropertySource(composite, propertySource, false);
 	}
 
@@ -228,6 +235,7 @@ public class NacosPropertySourceLocator implements PropertySourceLocator {
 						group);
 			}
 		}
+        // isRefreshable 为 true
 		//TODO 进入 核心
 		// nacosPropertySourceBuilder.build()方法调用 loadNacosData 获取配置，然后封装成 NacosPropertySource，
 		// 并且将该对象缓存到 NacosPropertySourceRepository中，后续会用到。

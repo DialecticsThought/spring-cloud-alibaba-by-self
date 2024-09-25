@@ -45,6 +45,10 @@ import org.springframework.context.ApplicationListener;
  *
  * @author juven.xuxb
  * @author pbting
+ * <p>
+ * TODO 因为 实现了ApplicationListener<ApplicationReadyEvent>接口 看 onApplicationEvent方法
+ * <p>
+ * TODO 这个类的加载是由NacosConfigAutoConfiguration
  */
 public class NacosContextRefresher
         implements ApplicationListener<ApplicationReadyEvent>, ApplicationContextAware {
@@ -101,7 +105,9 @@ public class NacosContextRefresher
     @Override
     public void onApplicationEvent(ApplicationReadyEvent event) {
         // many Spring context
+        //ready 原子类 默认 false  进行 CAS 更新
         if (this.ready.compareAndSet(false, true)) {
+            // 注册监听
             this.registerNacosListenersForApplications();
         }
     }
@@ -114,6 +120,10 @@ public class NacosContextRefresher
     /**
      * register Nacos Listeners.
      * TODO 重点
+     * <p>
+     * TODO NacosContextRefresher#registerNacosListenersForApplications
+     *          方法会判断是否启动了自动刷新配置，然后获取所有的 Nacos 配置，
+     *          并判断每个配置是否可以刷新，如果可以刷新则注册响应的监听。
      */
     private void registerNacosListenersForApplications() {
         // 是否开启配置刷新 spring.cloud.nacos.config.refreshEnabled属性的值为true, 表示开启配置刷新
@@ -125,7 +135,6 @@ public class NacosContextRefresher
                 if (!propertySource.isRefreshable()) {
                     continue;
                 }
-
                 // 获取配置dataId
                 String dataId = propertySource.getDataId();
                 // 注册nacos配置监听器
@@ -136,8 +145,12 @@ public class NacosContextRefresher
     }
 
     /**
-     * 和 client端的com.alibaba.nacos.client.config.impl.CacheData#safeNotifyListener联动
-     *
+     * TODO 和 client端的com.alibaba.nacos.client.config.impl.CacheData#safeNotifyListener联动
+     * TODO NacosContextRefresher#registerNacosListener 方法主要就是注册监听器。
+     *          其主要操作就是刷新记录加一，
+     *          增加 Nacos 刷新记录，
+     *          发布 RefreshEvent 事件，
+     *          然后调用 NacosConfigService#addListener 注册监听器。
      * @param groupKey
      * @param dataKey
      */
@@ -171,7 +184,7 @@ public class NacosContextRefresher
             if (configService == null && configManager != null) {
                 configService = configManager.getConfigService();
             }
-            // 注册配置监听器，以 dataId + groupId + namespace 为维度进行注册的
+            // TODO  注册配置监听器，以 dataId + groupId + namespace 为维度进行注册的
             // TODO  进入 看nacos client代码
             configService.addListener(dataKey, groupKey, listener);
         } catch (NacosException e) {

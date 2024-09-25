@@ -72,6 +72,7 @@ public class NacosPropertySourceBuilder {
 	NacosPropertySource build(String dataId, String group, String fileExtension,
 			boolean isRefreshable) {
 		// 获取配置
+		// TODO 进入
 		List<PropertySource<?>> propertySources = loadNacosData(dataId, group,
 				fileExtension);
 		// 将配置封装成NacosPropertySource
