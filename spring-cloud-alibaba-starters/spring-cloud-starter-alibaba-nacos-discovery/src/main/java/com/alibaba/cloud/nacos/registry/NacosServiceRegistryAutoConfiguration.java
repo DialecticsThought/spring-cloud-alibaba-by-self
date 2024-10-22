@@ -43,37 +43,60 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties
 @ConditionalOnNacosDiscoveryEnabled
 @ConditionalOnProperty(value = "spring.cloud.service-registry.auto-registration.enabled",
-		matchIfMissing = true)
-@AutoConfigureAfter({ AutoServiceRegistrationConfiguration.class,
-		AutoServiceRegistrationAutoConfiguration.class,
-		NacosDiscoveryAutoConfiguration.class })
+        matchIfMissing = true)
+@AutoConfigureAfter({AutoServiceRegistrationConfiguration.class,
+        AutoServiceRegistrationAutoConfiguration.class,
+        NacosDiscoveryAutoConfiguration.class})
 public class NacosServiceRegistryAutoConfiguration {
 
-	@Bean
-	public NacosServiceRegistry nacosServiceRegistry(
-			NacosServiceManager nacosServiceManager,
-			NacosDiscoveryProperties nacosDiscoveryProperties) {
-		return new NacosServiceRegistry(nacosServiceManager, nacosDiscoveryProperties);
-	}
+	/**
+	 * TODO 查看 该类 和父类
+	 * @param nacosServiceManager
+	 * @param nacosDiscoveryProperties
+	 * @return
+	 */
+    @Bean
+    public NacosServiceRegistry nacosServiceRegistry(
+            NacosServiceManager nacosServiceManager,
+            NacosDiscoveryProperties nacosDiscoveryProperties) {//TODO 查看 NacosDiscoveryProperties
+        return new NacosServiceRegistry(nacosServiceManager, nacosDiscoveryProperties);
+    }
 
-	@Bean
-	@ConditionalOnBean(AutoServiceRegistrationProperties.class)
-	public NacosRegistration nacosRegistration(
-			ObjectProvider<List<NacosRegistrationCustomizer>> registrationCustomizers,
-			NacosDiscoveryProperties nacosDiscoveryProperties,
-			ApplicationContext context) {
-		return new NacosRegistration(registrationCustomizers.getIfAvailable(),
-				nacosDiscoveryProperties, context);
-	}
+    @Bean
+    @ConditionalOnBean(AutoServiceRegistrationProperties.class)
+    public NacosRegistration nacosRegistration(
+            ObjectProvider<List<NacosRegistrationCustomizer>> registrationCustomizers,
+            NacosDiscoveryProperties nacosDiscoveryProperties,
+            ApplicationContext context) {
+        return new NacosRegistration(registrationCustomizers.getIfAvailable(),
+                nacosDiscoveryProperties, context);
+    }
 
-	@Bean
-	@ConditionalOnBean(AutoServiceRegistrationProperties.class)
-	public NacosAutoServiceRegistration nacosAutoServiceRegistration(
-			NacosServiceRegistry registry,
-			AutoServiceRegistrationProperties autoServiceRegistrationProperties,
-			NacosRegistration registration) {
-		return new NacosAutoServiceRegistration(registry,
-				autoServiceRegistrationProperties, registration);
-	}
+    /**
+     * 这个Bean在创建时，会传入NacosServiceRegistry和NacosRegistration两个Bean。
+     * 然后该Bean继承了AbstractAutoServiceRegistration抽象类。该抽象类实现了ApplicationListener接口，
+     * 所以项目启动时便是利用了Spring的监听事件来实现自动注册服务的。
+     * 因为在Spring容器启动的最后会执行finishRefresh()方法，然后会发布一个事件，该事件会触发调用onApplicationEvent()方法
+     * <p>
+     * 调用AbstractAutoServiceRegistration的onApplicationEvent()方法时，
+     * 首先会调用AbstractAutoServiceRegistration的bind()方法，
+     * 然后调用AbstractAutoServiceRegistration的start()方法，
+     * 接着调用AbstractAutoServiceRegistration的register()方法发起注册，
+     * 也就是调用this.serviceRegistry的register()方法完成服务注册的具体工作。
+     *
+     * @param registry
+     * @param autoServiceRegistrationProperties
+     * @param registration
+     * @return
+     */
+    @Bean
+    @ConditionalOnBean(AutoServiceRegistrationProperties.class)
+    public NacosAutoServiceRegistration nacosAutoServiceRegistration(
+            NacosServiceRegistry registry,
+            AutoServiceRegistrationProperties autoServiceRegistrationProperties,
+            NacosRegistration registration) {
+        return new NacosAutoServiceRegistration(registry,
+                autoServiceRegistrationProperties, registration);
+    }
 
 }

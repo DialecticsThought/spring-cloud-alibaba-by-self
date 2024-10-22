@@ -66,12 +66,16 @@ public class NacosServiceRegistry implements ServiceRegistry<Registration> {
 		}
 
 		NamingService namingService = namingService();
+		// 服务名称
 		String serviceId = registration.getServiceId();
+		// 服务分组
 		String group = nacosDiscoveryProperties.getGroup();
-
+		// 服务实例，包含了IP、Port等信息
 		Instance instance = getNacosInstanceFromRegistration(registration);
 
 		try {
+			// 调用NacosNamingService.registerInstance()方法把当前的服务实例注册到Nacos中
+			// TODO 查看 nacos-client
 			namingService.registerInstance(serviceId, group, instance);
 			log.info("nacos registry, {} {} {}:{} register finished", group, serviceId,
 					instance.getIp(), instance.getPort());
